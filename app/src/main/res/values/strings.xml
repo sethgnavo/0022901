@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">01 Bénin</string>
+    <string name="welcome">Bienvenue</string>
+    <string name="delete_legacy_contacts">Delete legacy contacts</string>
+    <string name="update_contacts">Update Contacts</string>
 </resources>

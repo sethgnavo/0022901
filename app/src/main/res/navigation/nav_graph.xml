@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.sethgnavo.a01benin.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_homeFragment_to_withCountryCodeFragment"
+            app:destination="@id/withCountryCodeFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_withoutCountryCodeFragment"
+            app:destination="@id/withoutCountryCodeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/withCountryCodeFragment"
+        android:name="com.sethgnavo.a01benin.WithCountryCodeFragment"
+        android:label="Avec indicatif"
+        tools:layout="@layout/fragment_with_country_code" />
+
+    <fragment
+        android:id="@+id/withoutCountryCodeFragment"
+        android:name="com.sethgnavo.a01benin.WithoutCountryCodeFragment"
+        android:label="Sans indicatif"
+        tools:layout="@layout/fragment_without_country_code" />
+</navigation>
