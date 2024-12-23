@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">01 Bénin</string>
     <string name="welcome">Bienvenue</string>
-    <string name="delete_legacy_contacts">Delete legacy contacts</string>
-    <string name="update_contacts">Update Contacts</string>
+    <string name="title">0022901</string>
+    <string name="guide">•🌍 Numéros avec indicatif: mise-à-jour de vos numéros qui ont l\'indicatif
+        +229 ou 00229\n\n•☎️ Numéros sans indicatif: mise-à-jour de vos numéros qui n\'ont
+        pas l\'indicatif +229 ou 00229, qui comportent 8 chiffres, et qui ont un préfixe compris
+        dans la liste suivante
+        (20,21,22,24,40,41,42,43,44,46,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,80,81,85,90,91,94,95,96,97,98,99).\n\nNotez
+        que si vous avez des numéros internationaux sans indicatif qui
+        ont 8 chiffres et qui débutent avec les préfixes pré-cités, ils seront aussi mis-à-jour
+        .\n\nUtilisez les options suivantes pour accéder au panel de mise-à-jour de vos
+        numéros:</string>
+    <string name="delete_legacy_contacts">Supprimer les anciens contacts</string>
+    <string name="update_contacts">Mettre à jour les contacts</string>
+    <string name="numbers_with_cc">Numéros avec indicatif</string>
+    <string name="numbers_without_cc">Numéros sans indicatif</string>
 </resources>

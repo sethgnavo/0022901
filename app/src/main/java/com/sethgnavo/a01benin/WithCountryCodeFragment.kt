@@ -1,7 +1,9 @@
 package com.sethgnavo.a01benin
 
+import android.Manifest
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
@@ -11,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -36,7 +39,12 @@ class WithCountryCodeFragment : Fragment() {
         progressText = view.findViewById(R.id.progressText)
         recyclerView = view.findViewById(R.id.recyclerViewContacts)
         recyclerView.layoutManager = LinearLayoutManager(activity)
-        recyclerView.addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
+        recyclerView.addItemDecoration(
+            DividerItemDecoration(
+                activity,
+                DividerItemDecoration.VERTICAL
+            )
+        )
 
         btnUpdateContacts = view.findViewById(R.id.btnUpdateContacts)
         btnDeleteLegacyContacts = view.findViewById(R.id.btnDeleteLegacyContacts)
@@ -103,13 +111,13 @@ class WithCountryCodeFragment : Fragment() {
 
     private fun updateLegacyContacts() {
 
-
         val resolver = requireContext().contentResolver
         val ops = ArrayList<ContentProviderOperation>()
         val cursor = resolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(
                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID,
                 ContactsContract.CommonDataKinds.Phone.NUMBER
             ),
             null, null, null
@@ -121,6 +129,9 @@ class WithCountryCodeFragment : Fragment() {
             do {
                 val contactId =
                     cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
+                val rawContactId =
+                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID))
+
                 val number =
                     cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
                 val cleanedNumber = number.replace(" ", "").replace("-", "")
@@ -139,10 +150,14 @@ class WithCountryCodeFragment : Fragment() {
 
                     if (!alreadyUpdated) {
                         val newNumber = "+229 01 " + number.getLast8Digits().formatNumber()
-                        Log.d("NUMBER UPDATE", "Old number: $number New number: $newNumber")
+                        updatedContacts++
+                        Log.d(
+                            "NUMBER UPDATE", "Old number: $number New number: $newNumber, " +
+                                    "count: $updatedContacts"
+                        )
                         ops.add(
                             ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                                .withValue(ContactsContract.Data.RAW_CONTACT_ID, contactId)
+                                .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
                                 .withValue(
                                     ContactsContract.Data.MIMETYPE,
                                     ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
@@ -155,7 +170,6 @@ class WithCountryCodeFragment : Fragment() {
                                 .build()
                         )
 
-                        updatedContacts++
                         progressText.text = "$updatedContacts contacts updated"
 
                         if (ops.size >= 400) {
@@ -171,8 +185,8 @@ class WithCountryCodeFragment : Fragment() {
             applyBatchSafely(resolver, ops)
         }
 
-        progressBar?.visibility = View.GONE
-        progressText?.visibility = View.GONE
+        progressBar.visibility = View.GONE
+        progressText.visibility = View.GONE
     }
 
     private fun applyBatchSafely(

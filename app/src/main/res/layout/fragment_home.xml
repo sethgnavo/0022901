@@ -1,26 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp">
+
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:layout_marginTop="56dp"
+        android:paddingVertical="16dp"
         android:text="@string/welcome"
-        android:textSize="18sp" />
+        android:textColor="@color/black"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
-    <Button
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/guide"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonNavigateToWithCountryCode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Numéros avec indicatif" />
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/btn_height"
+        android:layout_marginTop="24dp"
+        android:text="@string/numbers_with_cc"
+        app:cornerRadius="@dimen/corners" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonNavigateToWithoutCountryCode"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/btn_height"
+        android:layout_marginTop="@dimen/baseline"
+        android:text="@string/numbers_without_cc"
+        app:cornerRadius="@dimen/corners" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/ref"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Numbers sans indicatif" />
+        android:layout_gravity="center"
+        android:layout_marginBottom="36dp"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:text="https://github.com/sethgnavo/0022901"
+        android:textColor="#2C2C2E"
+        android:textSize="12sp" />
 </LinearLayout>

@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.sethgnavo.a01benin"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.sethgnavo.a01benin"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0-beta01"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
