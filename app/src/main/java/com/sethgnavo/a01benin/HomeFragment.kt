@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -29,10 +30,22 @@ class HomeFragment : Fragment() {
         buttonWithCountryCode.setOnClickListener {
             if (hasPermissions())
                 findNavController().navigate(R.id.action_homeFragment_to_withCountryCodeFragment)
+            else
+                Toast.makeText(
+                    requireActivity(),
+                    getString(R.string.contact_permissions_are_required_to_proceed),
+                    Toast.LENGTH_LONG
+                ).show()
         }
         buttonWithoutCountryCode.setOnClickListener {
             if (hasPermissions())
                 findNavController().navigate(R.id.action_homeFragment_to_withoutCountryCodeFragment)
+            else
+                Toast.makeText(
+                    requireActivity(),
+                    getString(R.string.contact_permissions_are_required_to_proceed),
+                    Toast.LENGTH_LONG
+                ).show()
         }
 
         return view

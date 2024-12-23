@@ -11,13 +11,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class WithCountryCodeFragment : Fragment() {
 
@@ -26,6 +31,7 @@ class WithCountryCodeFragment : Fragment() {
     private lateinit var btnUpdateContacts: Button
     private lateinit var btnDeleteLegacyContacts: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var progress: View
     private lateinit var progressText: TextView
 
     override fun onCreateView(
@@ -36,6 +42,7 @@ class WithCountryCodeFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_with_country_code, container, false)
 
         progressBar = view.findViewById(R.id.progressBar)
+        progress = view.findViewById(R.id.progress)
         progressText = view.findViewById(R.id.progressText)
         recyclerView = view.findViewById(R.id.recyclerViewContacts)
         recyclerView.layoutManager = LinearLayoutManager(activity)
@@ -55,12 +62,8 @@ class WithCountryCodeFragment : Fragment() {
         recyclerView.adapter = adapter
 
         btnUpdateContacts.setOnClickListener {
-
-            progressBar.visibility = View.VISIBLE
-            progressText.visibility = View.VISIBLE
-
+            progress.visibility = View.VISIBLE
             updateLegacyContacts()
-            adapter.updateContacts(fetchContactsWith229()) // Update adapter with new data
         }
 
         btnDeleteLegacyContacts.setOnClickListener {
@@ -110,83 +113,99 @@ class WithCountryCodeFragment : Fragment() {
     }
 
     private fun updateLegacyContacts() {
+        progress.visibility = View.VISIBLE
 
-        val resolver = requireContext().contentResolver
-        val ops = ArrayList<ContentProviderOperation>()
-        val cursor = resolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
-            ),
-            null, null, null
-        )
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                val resolver = requireContext().contentResolver
+                val ops = ArrayList<ContentProviderOperation>()
+                val cursor = resolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER
+                    ),
+                    null, null, null
+                )
 
-        var updatedContacts = 0
+                var updatedContacts = 0
 
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                val contactId =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
-                val rawContactId =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID))
+                if (cursor != null && cursor.moveToFirst()) {
+                    do {
+                        val contactId =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
+                        val rawContactId =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID))
 
-                val number =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
-                val cleanedNumber = number.replace(" ", "").replace("-", "")
+                        val number =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        val cleanedNumber = number.replace(" ", "").replace("-", "")
 
-                if ((cleanedNumber.startsWith("+229") || cleanedNumber.startsWith("00229")) &&
-                    !(cleanedNumber.startsWith("+22901") || cleanedNumber.startsWith("0022901"))
-                ) {
-                    val updatedCursor = resolver.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
-                        arrayOf(contactId, "+229 01%"), null
-                    )
+                        if ((cleanedNumber.startsWith("+229") || cleanedNumber.startsWith("00229")) &&
+                            !(cleanedNumber.startsWith("+22901") || cleanedNumber.startsWith("0022901"))
+                        ) {
+                            val updatedCursor = resolver.query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
+                                arrayOf(contactId, "+229 01%"), null
+                            )
 
-                    val alreadyUpdated = updatedCursor?.use { it.count > 0 } ?: false
+                            val alreadyUpdated = updatedCursor?.use { it.count > 0 } ?: false
 
-                    if (!alreadyUpdated) {
-                        val newNumber = "+229 01 " + number.getLast8Digits().formatNumber()
-                        updatedContacts++
-                        Log.d(
-                            "NUMBER UPDATE", "Old number: $number New number: $newNumber, " +
-                                    "count: $updatedContacts"
-                        )
-                        ops.add(
-                            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                                .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                                .withValue(
-                                    ContactsContract.Data.MIMETYPE,
-                                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                            if (!alreadyUpdated) {
+                                val newNumber = "+229 01 " + number.getLast8Digits().formatNumber()
+                                updatedContacts++
+                                Log.d(
+                                    "NUMBER UPDATE",
+                                    "Old number: $number New number: $newNumber, " +
+                                            "count: $updatedContacts"
                                 )
-                                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, newNumber)
-                                .withValue(
-                                    ContactsContract.CommonDataKinds.Phone.TYPE,
-                                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+                                ops.add(
+                                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                                        .withValue(
+                                            ContactsContract.Data.RAW_CONTACT_ID,
+                                            rawContactId
+                                        )
+                                        .withValue(
+                                            ContactsContract.Data.MIMETYPE,
+                                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                                        )
+                                        .withValue(
+                                            ContactsContract.CommonDataKinds.Phone.NUMBER,
+                                            newNumber
+                                        )
+                                        .withValue(
+                                            ContactsContract.CommonDataKinds.Phone.TYPE,
+                                            ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+                                        )
+                                        .build()
                                 )
-                                .build()
-                        )
 
-                        progressText.text = "$updatedContacts contacts updated"
+                                withContext(Dispatchers.Main) {
+                                    progressText.text = "$updatedContacts contacts updated"
+                                }
 
-                        if (ops.size >= 400) {
-                            applyBatchSafely(resolver, ops)
+                                if (ops.size >= 400) {
+                                    applyBatchSafely(resolver, ops)
+                                }
+                            }
                         }
-                    }
+                    } while (cursor.moveToNext())
+                    cursor.close()
                 }
-            } while (cursor.moveToNext())
-            cursor.close()
-        }
 
-        if (ops.isNotEmpty()) {
-            applyBatchSafely(resolver, ops)
-        }
+                if (ops.isNotEmpty()) {
+                    applyBatchSafely(resolver, ops)
+                }
+            }
 
-        progressBar.visibility = View.GONE
-        progressText.visibility = View.GONE
+            withContext(Dispatchers.Main) {
+                progress.visibility = View.GONE
+                adapter.updateContacts(fetchContactsWith229()) // Update adapter with new data
+            }
+        }
     }
 
     private fun applyBatchSafely(

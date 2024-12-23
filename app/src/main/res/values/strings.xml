@@ -15,4 +15,6 @@
     <string name="update_contacts">Mettre à jour les contacts</string>
     <string name="numbers_with_cc">Numéros avec indicatif</string>
     <string name="numbers_without_cc">Numéros sans indicatif</string>
+    <string name="contact_permissions_are_required_to_proceed">Contact permissions are required
+        to proceed. Please check settings</string>
 </resources>
