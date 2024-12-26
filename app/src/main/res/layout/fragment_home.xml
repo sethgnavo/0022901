@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:paddingHorizontal="24dp">
 
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -22,6 +21,14 @@
         android:layout_height="wrap_content"
         android:text="@string/guide"
         android:textColor="@color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Les numéros avec le prfixe 01 seront affichés en bleu."
+        android:textColor="@color/blue"
         android:textSize="16sp" />
 
     <com.google.android.material.button.MaterialButton
@@ -54,6 +61,6 @@
         android:autoLink="web"
         android:linksClickable="true"
         android:text="https://github.com/sethgnavo/0022901"
-        android:textColor="#2C2C2E"
+        android:textColorLink="#3C3C3E"
         android:textSize="12sp" />
 </LinearLayout>

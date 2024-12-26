@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="baseline">8dp</dimen>
-    <dimen name="btn_height">64dp</dimen>
+    <dimen name="corners">10dp</dimen>
+    <dimen name="btn_height">60dp</dimen>
 </resources>

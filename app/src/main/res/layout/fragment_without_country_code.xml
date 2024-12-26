@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
@@ -15,9 +16,37 @@
         android:padding="16dp"
         android:text="@string/numbers_without_cc"
         android:textColor="@color/black"
-        android:textSize="24dp"
+        android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/progress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginVertical="10dp"
+            android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/progressText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mise-à-jour des contacts en cours..."
+            android:textColor="@color/black" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewContacts"
@@ -25,7 +54,7 @@
         android:layout_height="0dp"
         android:scrollbars="vertical"
         app:layout_constraintBottom_toTopOf="@+id/separation"
-        app:layout_constraintTop_toBottomOf="@+id/title" />
+        app:layout_constraintTop_toBottomOf="@+id/progress" />
 
     <View
         android:id="@+id/separation"

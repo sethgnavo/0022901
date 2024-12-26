@@ -1,9 +1,7 @@
 package com.sethgnavo.a01benin
 
-import android.Manifest
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
@@ -11,10 +9,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -62,13 +59,28 @@ class WithCountryCodeFragment : Fragment() {
         recyclerView.adapter = adapter
 
         btnUpdateContacts.setOnClickListener {
-            progress.visibility = View.VISIBLE
-            updateLegacyContacts()
+
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.dialog_update_contacts_title))
+                .setMessage(getString(R.string.dialog_update_contacts_content))
+                .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
+                .setPositiveButton(R.string.dialog_update_contacts_action_positive) { dialog, _ ->
+                    progress.visibility = View.VISIBLE
+                    updateLegacyContacts()
+                }
+                .show()
         }
 
         btnDeleteLegacyContacts.setOnClickListener {
-            deleteLegacyContacts()
-            adapter.updateContacts(fetchContactsWith229()) // Update adapter with new data
+
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.dialog_delete_legacy_contacts_title))
+                .setMessage(getString(R.string.dialog_delete_legacy_contacts_content))
+                .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
+                .setPositiveButton(R.string.dialog_delete_legacy_contacts_action_positive) { dialog, _ ->
+                    deleteLegacyContacts()
+                }
+                .show()
         }
 
         return view
@@ -187,7 +199,8 @@ class WithCountryCodeFragment : Fragment() {
                                     progressText.text = "$updatedContacts contacts updated"
                                 }
 
-                                if (ops.size >= 400) {
+                                // Apply batch every 300 operations to prevent exceeding the limit
+                                if (ops.size >= 300) {
                                     applyBatchSafely(resolver, ops)
                                 }
                             }
@@ -204,6 +217,12 @@ class WithCountryCodeFragment : Fragment() {
             withContext(Dispatchers.Main) {
                 progress.visibility = View.GONE
                 adapter.updateContacts(fetchContactsWith229()) // Update adapter with new data
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.update_complete))
+                    .setMessage(getString(R.string.dialog_numbers_updated))
+                    .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+                    .show()
             }
         }
     }
@@ -222,75 +241,78 @@ class WithCountryCodeFragment : Fragment() {
     }
 
     private fun deleteLegacyContacts() {
-        val resolver = requireActivity().contentResolver
-        val ops = ArrayList<ContentProviderOperation>()
-        val cursor = resolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone._ID
-            ),
-            null, null, null
-        )
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                val resolver = requireActivity().contentResolver
+                val ops = ArrayList<ContentProviderOperation>()
+                val cursor = resolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone._ID
+                    ),
+                    null, null, null
+                )
 
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                val contactId =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
-                val number =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
-                val phoneId =
-                    cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
+                if (cursor != null && cursor.moveToFirst()) {
+                    do {
+                        val contactId =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
+                        val number =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        val phoneId =
+                            cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
 
-                // Check if the number is a legacy number
-                if ((number.replace(" ", "").replace("-", "")
-                        .startsWith("+229") || number.replace(" ", "").replace("-", "")
-                        .startsWith("00229")) && !number.replace(" ", "").replace("-", "")
-                        .startsWith("+22901")
-                ) {
-                    // Check if a number with the updated format exists for this contact
-                    val updatedCursor = resolver.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
-                        arrayOf(contactId, "+229 01%"),
-                        null
-                    )
+                        // Check if the number is a legacy number
+                        if ((number.replace(" ", "").replace("-", "")
+                                .startsWith("+229") || number.replace(" ", "").replace("-", "")
+                                .startsWith("00229")) && !number.replace(" ", "").replace("-", "")
+                                .startsWith("+22901")
+                        ) {
+                            // Check if a number with the updated format exists for this contact
+                            val updatedCursor = resolver.query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
+                                arrayOf(contactId, "+229 01%"), null
+                            )
 
-                    val hasUpdatedNumber = updatedCursor?.use { it.count > 0 } ?: false
+                            val hasUpdatedNumber = updatedCursor?.use { it.count > 0 } ?: false
 
-                    if (hasUpdatedNumber) {
-                        // Delete the legacy number
-                        ops.add(
-                            ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                                .withSelection("${ContactsContract.Data._ID} = ?", arrayOf(phoneId))
-                                .build()
-                        )
+                            if (hasUpdatedNumber) {
+                                // Delete the legacy number
+                                ops.add(
+                                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                                        .withSelection("${ContactsContract.Data._ID} = ?", arrayOf(phoneId)).build()
+                                )
 
-                        // Apply batch every 400 operations to prevent exceeding the limit
-                        if (ops.size >= 400) {
-                            try {
-                                resolver.applyBatch(ContactsContract.AUTHORITY, ops)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                                // Apply batch every 300 operations to prevent exceeding the limit
+                                if (ops.size >= 300) {
+                                    applyBatchSafely(resolver, ops)
+                                }
                             }
-                            ops.clear()
                         }
-                    }
+                    } while (cursor.moveToNext())
+                    cursor.close()
                 }
-            } while (cursor.moveToNext())
-            cursor.close()
-        }
 
-        // Apply remaining operations
-        if (ops.isNotEmpty()) {
-            try {
-                resolver.applyBatch(ContactsContract.AUTHORITY, ops)
-            } catch (e: Exception) {
-                e.printStackTrace()
+                // Apply remaining operations
+                if (ops.isNotEmpty()) {
+                    applyBatchSafely(resolver, ops)
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                progress.visibility = View.GONE
+                adapter.updateContacts(fetchContactsWith229()) // Update adapter with new data
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.dialog_delete_complete_title))
+                    .setMessage(getString(R.string.dialog_delete_complete_content_without_cc))
+                    .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+                    .show()
             }
         }
     }
-
 }

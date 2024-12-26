@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
 }
 
-
 android {
     namespace = "com.sethgnavo.a01benin"
     compileSdk = 35
