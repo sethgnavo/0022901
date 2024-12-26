@@ -7,18 +7,33 @@
     android:gravity="center"
     android:orientation="vertical">
 
-    <TextView
+    <LinearLayout
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="56dp"
         android:gravity="center_vertical"
+        android:orientation="vertical"
         android:padding="16dp"
-        android:text="@string/numbers_without_cc"
-        android:textColor="@color/black"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/numbers_without_cc"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/contact_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="200 contacts"
+            android:textColor="@color/black"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/progress"
@@ -71,22 +86,24 @@
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDeleteLegacyContacts"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:text="@string/delete_legacy_contacts"
-            android:textColor="@android:color/white"
-            app:cornerRadius="@dimen/corners" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUpdateContacts"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/btn_height"
             android:padding="12dp"
             android:text="@string/update_contacts"
             android:textColor="@android:color/white"
+            app:cornerRadius="@dimen/corners" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteLegacyContacts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:padding="12dp"
+            android:text="@string/delete_legacy_contacts"
+            android:textColor="@color/red"
             app:cornerRadius="@dimen/corners" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

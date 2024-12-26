@@ -30,6 +30,8 @@ class WithoutCountryCodeFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var progress: View
     private lateinit var progressText: TextView
+    private lateinit var contactCountText: TextView
+
     val prefixes = listOf(
         "20",//Zone géographique Ouémé, Plateau
         "21",//Zone géographique Littoral, Atlantique
@@ -90,6 +92,7 @@ class WithoutCountryCodeFragment : Fragment() {
 
         progressBar = view.findViewById(R.id.progressBar)
         progress = view.findViewById(R.id.progress)
+        contactCountText = view.findViewById(R.id.contact_count)
         progressText = view.findViewById(R.id.progressText)
         recyclerView = view.findViewById(R.id.recyclerViewContacts)
         recyclerView.layoutManager = LinearLayoutManager(activity)
@@ -175,6 +178,10 @@ class WithoutCountryCodeFragment : Fragment() {
                 contacts.add(Contact(name, numbers))
             }
         }
+
+        contactCountText.setVisibility(View.VISIBLE)
+        contactCountText.setText("${contacts.size} contacts")
+
         return contacts
     }
 
@@ -219,19 +226,23 @@ class WithoutCountryCodeFragment : Fragment() {
                             val updatedCursor = resolver.query(
                                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                                 arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
-                                arrayOf(contactId, "+229 01%"), null
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND (" +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?)",
+                                arrayOf(contactId, "+229 01%", "+22901%", "00229 01%", "0022901%"),
+                                null
                             )
 
                             val alreadyUpdated = updatedCursor?.use { it.count > 0 } ?: false
 
                             if (!alreadyUpdated) {
+                                updatedContacts++
+
                                 val newNumber = "+229 01 " + number.getLast8Digits().formatNumber()
 
-                                Log.d(
-                                    "NUMBER UPDATE",
-                                    "Old: " + number + " New: " + newNumber
-                                )
+                                Log.d("NUMBER UPDATE", "Old: " + number + " New: " + newNumber)
                                 ops.add(
                                     ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                                         .withValue(
@@ -258,9 +269,8 @@ class WithoutCountryCodeFragment : Fragment() {
                                 }
 
                                 // Apply batch every 300 operations to prevent exceeding the limit
-                                if (ops.size >= 300) {
-                                    applyBatchSafely(resolver, ops)
-                                }
+                                if (ops.size >= 300) applyBatchSafely(resolver, ops)
+
                             }
                         }
                     } while (cursor.moveToNext())
@@ -268,9 +278,8 @@ class WithoutCountryCodeFragment : Fragment() {
                 }
 
                 // Apply remaining operations
-                if (ops.isNotEmpty()) {
-                    applyBatchSafely(resolver, ops)
-                }
+                if (ops.isNotEmpty()) applyBatchSafely(resolver, ops)
+
             }
             withContext(Dispatchers.Main) {
                 progress.visibility = View.GONE
@@ -322,20 +331,24 @@ class WithoutCountryCodeFragment : Fragment() {
                             cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
                         val phoneId =
                             cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
+                        val cleanedNumber = number.replace(" ", "").replace("-", "")
 
-                        // Check if the number is a legacy number
-                        if (!number.startsWith("+") && !number.startsWith("00")//number does not start with a country code
-                            && number.replace(" ", "")
-                                .replace("-", "").length == 8//number is 8 digits long
+                        // Check if the number is a legacy Benin number without country code
+                        if (!cleanedNumber.startsWith("+") && !cleanedNumber.startsWith("00")//number does not start with a country code
+                            && cleanedNumber.length == 8//number is 8 digits long
                             && prefixes.any { number.startsWith(it) } //number has one of the prefixes of telecom operators in Benin
                         ) {
                             // Check if a number with the updated format exists for this contact
+                            // This makes sure that only Benin legacy phone numbers are deleted
                             val updatedCursor = resolver.query(
                                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                                 arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
-                                arrayOf(contactId, "+229 01%"),
-                                null
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND (" +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?)",
+                                arrayOf(contactId, "+229 01%", "+22901%", "00229 01%", "0022901%"), null
                             )
 
                             val hasUpdatedNumber = updatedCursor?.use { it.count > 0 } ?: false
@@ -344,18 +357,11 @@ class WithoutCountryCodeFragment : Fragment() {
                                 // Delete the legacy number
                                 ops.add(
                                     ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
-                                        .withSelection(
-                                            "${ContactsContract.Data._ID} = ?",
-                                            arrayOf(phoneId)
-                                        )
-                                        .build()
+                                        .withSelection("${ContactsContract.Data._ID} = ?", arrayOf(phoneId)).build()
                                 )
 
                                 // Apply batch every 300 operations to prevent exceeding the limit
-                                if (ops.size >= 300) {
-                                    applyBatchSafely(resolver, ops)
-
-                                }
+                                if (ops.size >= 300) applyBatchSafely(resolver, ops)
                             }
                         }
                     } while (cursor.moveToNext())
@@ -363,9 +369,7 @@ class WithoutCountryCodeFragment : Fragment() {
                 }
 
                 // Apply remaining operations
-                if (ops.isNotEmpty()) {
-                    applyBatchSafely(resolver, ops)
-                }
+                if (ops.isNotEmpty()) applyBatchSafely(resolver, ops)
             }
 
             withContext(Dispatchers.Main) {

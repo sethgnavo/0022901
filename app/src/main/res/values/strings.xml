@@ -10,7 +10,7 @@
         que si vous avez des numéros internationaux sans indicatif qui
         ont 8 chiffres et qui débutent avec les préfixes pré-cités, ils seront aussi mis-à-jour.\n\nUtilisez les options suivantes pour accéder au panel de mise-à-jour de vos
         numéros:</string>
-    <string name="delete_legacy_contacts">Supprimer les anciens contacts</string>
+    <string name="delete_legacy_contacts">Supprimer les anciens numéros</string>
     <string name="update_contacts">Mettre à jour les contacts</string>
     <string name="numbers_with_cc">Numéros avec indicatif</string>
     <string name="numbers_without_cc">Numéros sans indicatif</string>

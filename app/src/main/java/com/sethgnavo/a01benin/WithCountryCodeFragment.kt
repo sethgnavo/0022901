@@ -30,17 +30,18 @@ class WithCountryCodeFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var progress: View
     private lateinit var progressText: TextView
+    private lateinit var contactCountText: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_with_country_code, container, false)
 
         progressBar = view.findViewById(R.id.progressBar)
         progress = view.findViewById(R.id.progress)
         progressText = view.findViewById(R.id.progressText)
+        contactCountText = view.findViewById(R.id.contact_count)
         recyclerView = view.findViewById(R.id.recyclerViewContacts)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.addItemDecoration(
@@ -53,8 +54,7 @@ class WithCountryCodeFragment : Fragment() {
         btnUpdateContacts = view.findViewById(R.id.btnUpdateContacts)
         btnDeleteLegacyContacts = view.findViewById(R.id.btnDeleteLegacyContacts)
 
-        val contacts =
-            fetchContactsWith229().sortedBy { it.name.lowercase() } // Sort contacts by name
+        val contacts = fetchContactsWith229().sortedBy { it.name.lowercase() } // Sort contacts by name
         adapter = ContactsAdapter(contacts)
         recyclerView.adapter = adapter
 
@@ -95,8 +95,7 @@ class WithCountryCodeFragment : Fragment() {
                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER
-            ),
-            null, null, null
+            ), null, null, null
         )
 
         if (cursor != null && cursor.moveToFirst()) {
@@ -121,6 +120,10 @@ class WithCountryCodeFragment : Fragment() {
                 contacts.add(Contact(name, numbers))
             }
         }
+
+        contactCountText.setVisibility(View.VISIBLE)
+        contactCountText.setText("${contacts.size} contacts")
+
         return contacts
     }
 
@@ -171,23 +174,16 @@ class WithCountryCodeFragment : Fragment() {
                                 updatedContacts++
                                 Log.d(
                                     "NUMBER UPDATE",
-                                    "Old number: $number New number: $newNumber, " +
-                                            "count: $updatedContacts"
+                                    "Old number: $number New number: $newNumber, count: $updatedContacts"
                                 )
                                 ops.add(
                                     ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                                        .withValue(
-                                            ContactsContract.Data.RAW_CONTACT_ID,
-                                            rawContactId
-                                        )
+                                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
                                         .withValue(
                                             ContactsContract.Data.MIMETYPE,
                                             ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
                                         )
-                                        .withValue(
-                                            ContactsContract.CommonDataKinds.Phone.NUMBER,
-                                            newNumber
-                                        )
+                                        .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, newNumber)
                                         .withValue(
                                             ContactsContract.CommonDataKinds.Phone.TYPE,
                                             ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
@@ -200,18 +196,16 @@ class WithCountryCodeFragment : Fragment() {
                                 }
 
                                 // Apply batch every 300 operations to prevent exceeding the limit
-                                if (ops.size >= 300) {
-                                    applyBatchSafely(resolver, ops)
-                                }
+                                if (ops.size >= 300) applyBatchSafely(resolver, ops)
+
                             }
                         }
                     } while (cursor.moveToNext())
                     cursor.close()
                 }
 
-                if (ops.isNotEmpty()) {
-                    applyBatchSafely(resolver, ops)
-                }
+                if (ops.isNotEmpty()) applyBatchSafely(resolver, ops)
+
             }
 
             withContext(Dispatchers.Main) {
@@ -263,19 +257,22 @@ class WithCountryCodeFragment : Fragment() {
                             cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
                         val phoneId =
                             cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
+                        val cleanedNumber = number.replace(" ", "").replace("-","")
 
                         // Check if the number is a legacy number
-                        if ((number.replace(" ", "").replace("-", "")
-                                .startsWith("+229") || number.replace(" ", "").replace("-", "")
-                                .startsWith("00229")) && !number.replace(" ", "").replace("-", "")
-                                .startsWith("+22901")
+                        if ((cleanedNumber.startsWith("+229") || cleanedNumber.startsWith("00229"))
+                            && !(cleanedNumber.startsWith("+22901") || cleanedNumber.startsWith("0022901"))
                         ) {
                             // Check if a number with the updated format exists for this contact
                             val updatedCursor = resolver.query(
                                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                                 arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?",
-                                arrayOf(contactId, "+229 01%"), null
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ? AND (" +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ? OR " +
+                                        "${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?)",
+                                arrayOf(contactId, "+229 01%", "+22901%", "00229 01%", "0022901%"), null
                             )
 
                             val hasUpdatedNumber = updatedCursor?.use { it.count > 0 } ?: false
@@ -288,9 +285,8 @@ class WithCountryCodeFragment : Fragment() {
                                 )
 
                                 // Apply batch every 300 operations to prevent exceeding the limit
-                                if (ops.size >= 300) {
-                                    applyBatchSafely(resolver, ops)
-                                }
+                                if (ops.size >= 300) applyBatchSafely(resolver, ops)
+
                             }
                         }
                     } while (cursor.moveToNext())
@@ -298,9 +294,8 @@ class WithCountryCodeFragment : Fragment() {
                 }
 
                 // Apply remaining operations
-                if (ops.isNotEmpty()) {
-                    applyBatchSafely(resolver, ops)
-                }
+                if (ops.isNotEmpty()) applyBatchSafely(resolver, ops)
+
             }
 
             withContext(Dispatchers.Main) {
