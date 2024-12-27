@@ -44,6 +44,7 @@ class WithoutCountryCodeFragment : Fragment() {
         "43",//Celtiis
         "44",//Celtiis
         "46",//MTN
+        "48",//Celtiis
 
         "50",//MTN
         "51",//MTN

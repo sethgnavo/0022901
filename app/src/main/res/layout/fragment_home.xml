@@ -31,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Les numéros avec le prfixe 01 seront affichés en bleu."
+            android:text="Les numéros avec le préfixe 01 seront affichés en bleu."
             android:textColor="@color/blue"
             android:textSize="16sp" />
 
@@ -41,6 +41,7 @@
             android:layout_height="@dimen/btn_height"
             android:layout_marginTop="24dp"
             android:text="@string/numbers_with_cc"
+            android:textColor="@color/white"
             app:cornerRadius="@dimen/corners" />
 
         <com.google.android.material.button.MaterialButton
@@ -49,6 +50,7 @@
             android:layout_height="@dimen/btn_height"
             android:layout_marginTop="@dimen/baseline"
             android:text="@string/numbers_without_cc"
+            android:textColor="@color/white"
             app:cornerRadius="@dimen/corners" />
 
         <Space
